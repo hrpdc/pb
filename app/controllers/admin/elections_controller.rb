@@ -486,7 +486,7 @@ module Admin
       workflow_first = @election.config[:workflow][0]  
 
       voters_by_date_and_origin = election.valid_voters
-        .select("DATE(CONVERT_TZ(created_at, '+00:00', '#{utc_offset}')) AS date, authentication_method, location_id, COUNT(*) AS vote_count")
+        .select("DATE((created_at AT TIME ZONE 'UTC') AT TIME ZONE 'America/New_York') AS date, authentication_method, location_id, COUNT(*) AS vote_count")
         .where.not(stage: workflow_first)
         .group(:date, :authentication_method, :location_id)
       origins = voters_by_date_and_origin.map(&:origin).uniq
