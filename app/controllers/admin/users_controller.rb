@@ -103,12 +103,21 @@ module Admin
         if create_new_user
           # Send the confirmation email
           generate_new_confirmation_id(user)
+          #begin
+            #UserMailer.confirmation_email(user, request.base_url).deliver
+          #rescue Net::SMTPFatalError => e
+            #errors << e.message
+            #raise ActiveRecord::Rollback
+          #end
           begin
             UserMailer.confirmation_email(user, request.base_url).deliver
-          rescue Net::SMTPFatalError => e
-            errors << e.message
-            raise ActiveRecord::Rollback
+          rescue StandardError => e
+            Rails.logger.warn "Email delivery failed: #{e.message}"
+            errors << "Email failed to send, but user was created."
+            # Do NOT rollback the user creation
           end
+end
+
         end
 
         log_activity('user_create', note: user.id.to_s)
