@@ -276,7 +276,7 @@ class VoteController < ApplicationController
     workflow = @election.config[:workflow].flatten
     if workflow.include?('approval')
       @projects = @election.projects.joins('LEFT OUTER JOIN vote_approvals ON vote_approvals.project_id = projects.id ' \
-        'LEFT OUTER JOIN voters ON voters.id = vote_approvals.voter_id AND voters.void = 0')
+        'LEFT OUTER JOIN voters ON voters.id = vote_approvals.voter_id AND voters.')
         .select('projects.*, COUNT(voters.id) + COALESCE(projects.external_vote_count, 0) AS vote_count')
         .where('projects.adjustable_cost = 0')
         .group('projects.id').order('vote_count DESC').map do |p|
@@ -298,13 +298,13 @@ class VoteController < ApplicationController
       @has_adjustable_cost_projects = @election.projects.exists?(adjustable_cost: true)
 
       if @has_adjustable_cost_projects
-        total_votes = @election.voters.where('void = 0 AND stage IS NOT NULL AND stage != \'approval\'').count  # FIXME: Not a good way to count.
+        total_votes = @election.voters.where(' AND stage IS NOT NULL AND stage != \'approval\'').count  # FIXME: Not a good way to count.
 
         @adjustable_cost_projects = @election.projects.where(adjustable_cost: true).map do |project|
           # Get the vote count for each cost from the table.
           vote_counts = {}
           adjustable_project_data = project.vote_approvals.select('cost, COUNT(*) AS vote_count')
-            .joins(:voter).where('voters.void = 0').group(:cost)
+            .joins(:voter).where('voters.').group(:cost)
           adjustable_project_data.each do |vp|
             vote_counts[vp.cost] = vp.vote_count
           end
