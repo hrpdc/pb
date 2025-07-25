@@ -328,14 +328,14 @@ module Admin
     def analytics_adjustable_cost_projects
       @election = Election.find(params[:id])
 
-      total_votes = @election.voters.where('void = 0 AND stage IS NOT NULL AND stage != \'approval\'').count  # FIXME: Not a good way to count.
+      total_votes = @election.voters.where('void = FALSE AND stage IS NOT NULL AND stage != \'approval\'').count  # FIXME: Not a good way to count.
 
       # Get the adjustable cost projects.
       @adjustable_cost_projects = @election.projects.where(adjustable_cost: true).map do |project|
         # Get the vote count for each cost from the table.
         vote_counts = {}
         adjustable_project_data = project.vote_approvals.select('cost, COUNT(*) AS vote_count')
-          .joins(:voter).where('voters.void = 0').group(:cost)
+          .joins(:voter).where('voters.void = FALSE').group(:cost)
         adjustable_project_data.each do |vp|
           vote_counts[vp.cost] = vp.vote_count
         end
@@ -519,7 +519,7 @@ module Admin
     def analytics_approval(election, utc_offset, filter)
       approvals = election.projects.joins('LEFT OUTER JOIN vote_approvals ON vote_approvals.project_id = projects.id ' \
         'LEFT OUTER JOIN voters ON voters.id = vote_approvals.voter_id AND ' \
-        'voters.void = 0' + (filter.empty? ? '' : (' AND ' + filter)))
+        'voters.void = FALSE' + (filter.empty? ? '' : (' AND ' + filter)))
         .select('projects.*, COUNT(voters.id) + COALESCE(projects.external_vote_count, 0) AS vote_count')
         .group('projects.id').order('vote_count DESC').map do |p|
         {
@@ -623,7 +623,7 @@ module Admin
       # is array of length 3: [# of losses, # of ties, # of wins] by the project on the row.
       comparison_data = Array.new(@projects.length) {Array.new(@projects.length) {[0, 0, 0]}}
       VoteComparison.select('first_project_id, second_project_id, result, COUNT(*) AS vote_count')
-              .joins(:voter).where('voters.election_id = ? AND voters.void = 0 AND voters.stage IS NOT NULL' + (filter.empty? ? '' : (' AND ' + filter)), election.id)
+              .joins(:voter).where('voters.election_id = ? AND voters.void = FALSE AND voters.stage IS NOT NULL' + (filter.empty? ? '' : (' AND ' + filter)), election.id)
               .group('first_project_id, second_project_id, result').each do |v|
         i = id_to_index[v.first_project_id]
         j = id_to_index[v.second_project_id]
@@ -706,7 +706,7 @@ module Admin
 
       votes_by_project_and_cost = knapsack_projects
         .joins('LEFT OUTER JOIN vote_knapsacks ON vote_knapsacks.project_id = projects.id '\
-        'LEFT OUTER JOIN voters ON voters.id = vote_knapsacks.voter_id AND voters.void = 0')
+        'LEFT OUTER JOIN voters ON voters.id = vote_knapsacks.voter_id AND voters.void = FALSE')
         .select('projects.id, vote_knapsacks.cost AS knapsack_cost, COUNT(voters.id) AS vote_count')
         .group('projects.id, vote_knapsacks.cost')
         .order('vote_count DESC, projects.sort_order')
@@ -768,7 +768,7 @@ module Admin
       knapsacks_individual_csv = lambda do
         raise 'error' unless current_user.can_see_voter_data?(election)
 
-        valid_voters = election.voters.where("void = 0 AND stage IS NOT NULL")
+        valid_voters = election.voters.where("void = FALSE AND stage IS NOT NULL")
 
         vote_knapsacks = valid_voters.joins('LEFT OUTER JOIN vote_knapsacks ON vote_knapsacks.voter_id = voters.id')
           .select('voters.id, voters.stage, vote_knapsacks.project_id, vote_knapsacks.cost').order(:id)
@@ -812,7 +812,7 @@ module Admin
         vote_knapsacks = election.valid_voters.joins('JOIN vote_knapsacks ON vote_knapsacks.voter_id = voters.id')
           .select('voters.id, vote_knapsacks.project_id').order(:id)
         projects = election.projects.joins('LEFT OUTER JOIN vote_knapsacks ON vote_knapsacks.project_id = projects.id '\
-          'LEFT OUTER JOIN voters ON voters.id = vote_knapsacks.voter_id AND voters.void = 0 ' \
+          'LEFT OUTER JOIN voters ON voters.id = vote_knapsacks.voter_id AND voters.void = FALSE ' \
           'LEFT OUTER JOIN category_translations ON category_translations.category_id = projects.category_id')
           .select('projects.*, vote_knapsacks.cost AS cost, category_translations.name AS category_name, COUNT(voters.id) AS vote_count')
           .where('category_translations.locale IS NULL OR category_translations.locale = ?', election.config[:default_locale])
@@ -844,7 +844,7 @@ module Admin
     def analytics_token(election, utc_offset, filter)
       tokens = election.projects.joins('LEFT OUTER JOIN vote_tokens ON vote_tokens.project_id = projects.id ' \
         'LEFT OUTER JOIN voters ON voters.id = vote_tokens.voter_id AND ' \
-        'voters.void = 0' + (filter.empty? ? '' : (' AND ' + filter)))
+        'voters.void = FALSE' + (filter.empty? ? '' : (' AND ' + filter)))
         .select('projects.*, COALESCE(SUM(vote_tokens.cost*(1-voters.void)), 0) AS vote_count')
         .group('projects.id').order('vote_count DESC').map do |p|
         {
@@ -909,7 +909,7 @@ module Admin
         raise 'error' unless current_user.can_see_voter_data?(election)
 
         project_scores = election.projects.joins('LEFT OUTER JOIN vote_tokens ON vote_tokens.project_id = projects.id ' \
-           'LEFT OUTER JOIN voters ON voters.id = vote_tokens.voter_id AND voters.void = 0' + (filter.empty? ? '' : (' AND ' + filter)) + ' '\
+           'LEFT OUTER JOIN voters ON voters.id = vote_tokens.voter_id AND voters.void = FALSE' + (filter.empty? ? '' : (' AND ' + filter)) + ' '\
            'LEFT OUTER JOIN category_translations ON category_translations.category_id = projects.category_id')
            .select('projects.*, category_translations.name AS category_name, COUNT(vote_tokens.cost) AS vote_count, ' \
            'COALESCE(SUM(vote_tokens.cost*(1-voters.void)), 0) AS score')
@@ -965,7 +965,7 @@ module Admin
 
       votes_by_project_and_rank = projects_to_rank
         .joins('INNER JOIN vote_rankings ON vote_rankings.project_id = projects.id '\
-        'INNER JOIN voters ON voters.id = vote_rankings.voter_id AND voters.void = 0')
+        'INNER JOIN voters ON voters.id = vote_rankings.voter_id AND voters.void = FALSE')
         .select('vote_rankings.project_id, vote_rankings.rank, COUNT(voters.id) AS vote_count')
         .group('vote_rankings.project_id, vote_rankings.rank')
       if !current_user.can_see_exact_results?(election)
@@ -1059,7 +1059,7 @@ module Admin
 
         project_scores = election.projects.joins('LEFT OUTER JOIN vote_rankings ON vote_rankings.project_id = projects.id ' \
           'LEFT OUTER JOIN category_translations ON category_translations.category_id = projects.category_id ' \
-          'LEFT OUTER JOIN voters ON voters.id = vote_rankings.voter_id AND voters.void = 0')
+          'LEFT OUTER JOIN voters ON voters.id = vote_rankings.voter_id AND voters.void = FALSE')
           .select('projects.*, category_translations.name AS category_name, COUNT(vote_rankings.cost) AS vote_count, ' \
           ' COALESCE(SUM(' + (k+1).to_s + '-vote_rankings.rank), 0) AS score')
           .group('projects.id, category_name')
@@ -1116,7 +1116,7 @@ module Admin
 
       votes_by_project_and_rank = projects_to_rank
         .joins('INNER JOIN vote_approvals ON vote_approvals.project_id = projects.id '\
-        'INNER JOIN voters ON voters.id = vote_approvals.voter_id AND voters.void = 0')
+        'INNER JOIN voters ON voters.id = vote_approvals.voter_id AND voters.void = FALSE')
         .select('vote_approvals.project_id, vote_approvals.rank, COUNT(voters.id) AS vote_count')
         .group('vote_approvals.project_id, vote_approvals.rank')
       if !current_user.can_see_exact_results?(election)
@@ -1220,7 +1220,7 @@ module Admin
 
         records = election.voter_registration_records
           .joins('LEFT OUTER JOIN voters ON voters.id = voter_registration_records.voter_id AND ' \
-          'voters.void = 0')
+          'voters.void = FALSE')
           .where('voter_id IS NULL OR voters.id IS NOT NULL')
 
         # Generate the column headers
@@ -1253,7 +1253,7 @@ module Admin
         raise 'error' unless current_user.can_see_voter_data?(election)
         raise 'error' unless election.config[:remote_voting_free_verification]
 
-        voters = election.voters.where('void = 0').order(:id)
+        voters = election.voters.where('void = FALSE').order(:id)
 
         # Generate the column headers
         headers = (!current_user.superadmin? ? ['voter_id'] : []) + ['text_field_value']
