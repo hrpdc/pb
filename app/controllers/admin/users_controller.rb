@@ -116,8 +116,6 @@ module Admin
             errors << "Email failed to send, but user was created."
             # Do NOT rollback the user creation
           end
-end
-
         end
 
         log_activity('user_create', note: user.id.to_s)
