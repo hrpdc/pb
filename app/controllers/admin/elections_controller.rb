@@ -658,7 +658,7 @@ module Admin
       end
 
       comparison_voters_by_date = election.valid_voters.joins(:vote_comparisons)
-        .select("DATE(CONVERT_TZ(voters.created_at, '+00:00', '#{utc_offset}')) AS date, COUNT(DISTINCT voters.id) AS vote_count")
+        .select("DATE((voters.created_at AT TIME ZONE 'UTC') AT TIME ZONE 'America/New_York') AS date, COUNT(DISTINCT voters.id) AS vote_count")
         .group(:date)
       comparison_total = comparison_voters_by_date.map(&:vote_count).sum
 
@@ -761,7 +761,7 @@ module Admin
       end
 
       knapsack_voters_by_date = election.valid_voters.joins(:vote_knapsacks)
-        .select("DATE(CONVERT_TZ(voters.created_at, '+00:00', '#{utc_offset}')) AS date, COUNT(DISTINCT voters.id) AS vote_count")
+        .select("DATE((voters.created_at AT TIME ZONE 'UTC') AT TIME ZONE 'America/New_York') AS date, COUNT(DISTINCT voters.id) AS vote_count")
         .group(:date)
       knapsack_total = knapsack_voters_by_date.map(&:vote_count).sum
 
