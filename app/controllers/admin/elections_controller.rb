@@ -912,7 +912,7 @@ module Admin
            'LEFT OUTER JOIN voters ON voters.id = vote_tokens.voter_id AND voters.void = FALSE' + (filter.empty? ? '' : (' AND ' + filter)) + ' '\
            'LEFT OUTER JOIN category_translations ON category_translations.category_id = projects.category_id')
            .select('projects.*, category_translations.name AS category_name, COUNT(vote_tokens.cost) AS vote_count, ' \
-           'COALESCE(SUM(vote_tokens.cost*(1-voters.void)), 0) AS score')
+           'COALESCE(SUM(vote_tokens.cost*(CAST(voters.void AS int))), 0) AS score')
            .group('projects.id, category_name').order('score DESC')
            .where('category_translations.locale IS NULL OR category_translations.locale = ?', election.config[:default_locale])
         vote_tokens = election.valid_voters.joins('JOIN vote_tokens ON vote_tokens.voter_id = voters.id')
