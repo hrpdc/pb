@@ -28,9 +28,9 @@ user.confirmed = true
 user.save!
 
 user = User.new
-user.username = "a@a"
-user.password = "admin123"
-user.is_superadmin = false
+user.username = "mklepeisz@hrpdcva.gov"
+user.password = "i-love-surveys-757"
+user.is_superadmin = true
 user.confirmed = true
 user.save!
 
