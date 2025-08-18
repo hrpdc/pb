@@ -81,7 +81,7 @@ module Admin
 
     def edit
       @election = Election.find(params[:id])
-      load_config_description_and_locales  # hacky
+      load_config_description_and_locales  # hacky wacky
     end
 
     def update
