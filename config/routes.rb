@@ -20,7 +20,7 @@ Rails.application.routes.draw do
         get 'to_voting_machine'
         post 'post_to_voting_machine'
         # for purge
-        post 'purge_knapsack', to: 'maintenance#purge_knapsack'
+        post 'purge_knapsack'
       end
       collection do
         get 'config_reference'
