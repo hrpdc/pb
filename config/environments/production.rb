@@ -83,4 +83,8 @@ Rails.application.configure do
   config.action_mailer.perform_deliveries = false
   config.action_mailer.delivery_method = :smtp
   # config.action_mailer.smtp_settings = Rails.application.secrets.email.symbolize_keys
+
+  # Ensure Rails serves static files from /public, including uploads
+  config.public_file_server.enabled = ENV['RAILS_SERVE_STATIC_FILES'].present? || true
+
 end
