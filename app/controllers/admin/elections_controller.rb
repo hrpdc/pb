@@ -111,6 +111,25 @@ module Admin
       election.destroy
       redirect_to admin_root_path
     end
+def purge_knapsack
+  election = Election.find(params[:id])
+
+  ActiveRecord::Base.transaction do
+    # Delete knapsack votes tied to this election
+    ActiveRecord::Base.connection.execute(<<~SQL)
+      DELETE FROM vote_knapsacks
+      USING voters
+      WHERE vote_knapsacks.voter_id = voters.id
+        AND voters.election_id = #{election.id}
+    SQL
+
+    # Then delete voters of this election
+    Voter.where(election_id: election.id).delete_all
+  end
+
+  redirect_to admin_election_path(election),
+              notice: "Purged knapsack votes & voters for election #{election.id}."
+end
 
     def analytics
       @election = Election.find(params[:id])
