@@ -3,7 +3,7 @@
 <% if current_user&.is_superadmin? %>
   <div style="margin-top:1rem">
     <%= button_to "Purge test data (knapsack + voters)",
-                  admin_purge_knapsack_path(@election),
+                  purge_knapsack_admin_election_path(@election),
                   method: :post,
                   data: { confirm: "IRREVERSIBLE: Delete ALL knapsack votes and ALL voters for this election?" },
                   class: "btn btn-danger" %>
