@@ -5,7 +5,7 @@ Rails.application.routes.draw do
   # See how all your routes lay out with "rails routes".
 
   root 'home#index'
-
+  
   namespace :admin do
     root 'home#index'
     resources :elections do
@@ -19,6 +19,8 @@ Rails.application.routes.draw do
         get 'analytics_chicago49'
         get 'to_voting_machine'
         post 'post_to_voting_machine'
+        # for purge
+        post 'purge_knapsack', to: 'maintenance#purge_knapsack'
       end
       collection do
         get 'config_reference'
