@@ -87,4 +87,6 @@ Rails.application.configure do
   # Ensure Rails serves static files from /public, including uploads
   config.public_file_server.enabled = ENV['RAILS_SERVE_STATIC_FILES'].present? || true
 
+  # test image volume
+
 end
